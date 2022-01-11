@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import './App.css'
+import Image from './components/Image'
 
 function App() {
 
@@ -24,11 +25,13 @@ function App() {
         likes: image.likes + 1
       })
     })
-    const updatedLikes = [...images]
+    const updatedLikes = JSON.parse(JSON.stringify(images))
+    const match = updatedLikes.find((targetImage) => targetImage.id === image.id)
+    match.likes++
     setImages(updatedLikes)
   }
 
-  function createComentOnServer(imageId, content, image) {
+  function createComentOnServer(imageId, content) {
     fetch('http://localhost:3000/comments', {
       method: "POST",
       headers: {
@@ -39,16 +42,25 @@ function App() {
         content: content
       })
     }).then(resp => resp.json())
+      .then((newComment) => {
+        const updatedImages = JSON.parse(JSON.stringify(images))
+        const match = updatedImages.find((targetImage) => targetImage.id === imageId)
+        match.comments.push(newComment)
+        setImages(updatedImages)
+      })
   }
 
-    function deleteComments(comment) {
-      return fetch(`http://localhost:3000/comments/${comment.id}`, {
+  function deleteComments(comment) {
+    fetch(`http://localhost:3000/comments/${comment.id}`, {
       method: 'DELETE'
-      }).then(resp => resp.json())
-      .then(function () {
-        const updateComments = comment.filter((targetComment) => targetComment.id !== comment.id)
-        setImages(updateComments)
-      })
+    }).then(resp => resp.json())
+    .then(() => {
+      const updatedImages = JSON.parse(JSON.stringify(images))
+      const match = updatedImages.find((targetImage) => targetImage.id === comment.imageId)
+      match.comments = match.comments.filter(targetComment => targetComment.id !== comment.id)
+      setImages(updatedImages)
+    })
+
   }
 
   return (
@@ -79,53 +91,10 @@ function App() {
         </form>
 
         {images.map((image) => (
-          <article className="image-card" key={image.id} >
-            <h2 className="title">{image.title}</h2>
-            <img src={`${image.image}`} className={`${image.title}`} />
-            <div className="likes-section">
-              <span className="likes">{`${image.likes} likes`}</span>
-              <button className="like-button" onClick={() => {
-                addLike(image)
-                image.likes += 1
-              }}>♥</button>
-            </div>
-            <ul className="comments">
-              {image.comments.map((comment) => (
-                <li key={comment.id}>{`${comment.content}`}
-                  <button
-                    className='delet-coment-btn'
-                    onClick={
-                      function () {
-                        deleteComments(comment)
-
-                        // image.comments = image.comments.filter(function (targetComment) {
-                        //   return targetComment.id !== comment.id
-                        // })
-                      }
-                    }
-                  >x</button>
-                </li>
-              ))}
-            </ul>
-            <form
-              className="comment-form"
-              onSubmit={function (e) {
-                e.preventDefault()
-                const comment = e.target.comment.value
-                createComentOnServer(image.id, comment, image)
-                const commentForm = document.querySelector('article form.comment-form')
-                commentForm.reset()
-              }}
-            >
-              <input
-                className="comment-input"
-                type="text"
-                name="comment"
-                placeholder="Add a comment..."
-              />
-              <button className="comment-button" type="submit">Post</button>
-            </form>
-          </article>
+          <Image image={image} key={image.id}
+            addLike={addLike}
+            createComentOnServer={createComentOnServer}
+            deleteComments={deleteComments} />
         ))}
       </section>
     </div>
