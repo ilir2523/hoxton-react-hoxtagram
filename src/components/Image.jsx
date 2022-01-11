@@ -1,7 +1,10 @@
 function Image (props) {
     return(
         <article className="image-card"  >
-        <h2 className="title">{props.image.title}</h2>
+        <h2 className="title">{props.image.title} 
+          <button className="delete-button-card" 
+          onClick={() => props.deleteImage(props.image.id)} >Delete</button>
+        </h2>
         <img src={`${props.image.image}`} className={`${props.image.title}`} />
         <div className="likes-section">
           <span className="likes">{`${props.image.likes} likes`}</span>

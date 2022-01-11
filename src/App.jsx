@@ -54,13 +54,44 @@ function App() {
     fetch(`http://localhost:3000/comments/${comment.id}`, {
       method: 'DELETE'
     }).then(resp => resp.json())
+      .then(() => {
+        const updatedImages = JSON.parse(JSON.stringify(images))
+        const match = updatedImages.find((targetImage) => targetImage.id === comment.imageId)
+        match.comments = match.comments.filter(targetComment => targetComment.id !== comment.id)
+        setImages(updatedImages)
+      })
+
+  }
+
+  function createImageOnServer(title, imageUrl) {
+    fetch('http://localhost:3000/images', {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        title: title,
+        likes: 0,
+        image: imageUrl,
+        comments: []
+      })
+    }).then(resp => resp.json())
+      .then((newImage) => {
+        const copyImages = JSON.parse(JSON.stringify(images))
+        copyImages.push(newImage)
+        setImages(copyImages)
+      })
+  }
+
+  function deleteImage(id) {
+    fetch(`http://localhost:3000/images/${id}`, {
+      method: 'DELETE'
+    }).then(resp => resp.json())
     .then(() => {
-      const updatedImages = JSON.parse(JSON.stringify(images))
-      const match = updatedImages.find((targetImage) => targetImage.id === comment.imageId)
-      match.comments = match.comments.filter(targetComment => targetComment.id !== comment.id)
+      const copyImages = JSON.parse(JSON.stringify(images))
+      const updatedImages = copyImages.filter((target) => target.id !== id)
       setImages(updatedImages)
     })
-
   }
 
   return (
@@ -71,7 +102,17 @@ function App() {
       </section>
       <section className="image-container">
 
-        <form className="comment-form image-card">
+        <form className="comment-form image-card"
+          onSubmit={(e) => {
+            e.preventDefault()
+            const titleValue = e.target.title.value
+            const imageValue = e.target.image.value
+
+            createImageOnServer(titleValue, imageValue)
+            e.target.reset()
+          }
+          }
+        >
           <h2 className="title">New Post</h2>
           <input
             className="comment-input"
@@ -94,7 +135,8 @@ function App() {
           <Image image={image} key={image.id}
             addLike={addLike}
             createComentOnServer={createComentOnServer}
-            deleteComments={deleteComments} />
+            deleteComments={deleteComments}  
+            deleteImage={deleteImage}/>
         ))}
       </section>
     </div>
